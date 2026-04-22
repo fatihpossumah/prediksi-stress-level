@@ -75,7 +75,7 @@ if submitted:
 
     # ✅ STEP 1: Scale numeric columns BEFORE one-hot encoding
     # At this point, all numeric columns still exist in input_df
-    input_df[scale_cols] = scaler.transform(input_df[scale_cols])
+    input_df[scale_cols] = scaler.transform(input_df[scale_cols].to_numpy())
 
     # ✅ STEP 2: One-hot encoding (drops the original categorical columns)
     for col, categories in category_info.items():
