@@ -45,18 +45,6 @@ with st.form("prediction_form"):
 # ========================
 if submitted:
 
-    scale_cols = [
-        'age',
-        'daily_screen_time_hours',
-        'phone_usage_before_sleep_minutes',
-        'sleep_duration_hours',
-        'sleep_quality_score',
-        'caffeine_intake_cups',
-        'physical_activity_minutes',
-        'notifications_received_per_day',
-        'mental_fatigue_score'
-    ]
-
     input_dict = {
         'age': age,
         'daily_screen_time_hours': daily_screen_time_hours,
@@ -73,19 +61,19 @@ if submitted:
 
     input_df = pd.DataFrame([input_dict])
 
-    # ✅ STEP 1: Scale numeric columns BEFORE one-hot encoding
-    # At this point, all numeric columns still exist in input_df
-    input_df[scale_cols] = scaler.transform(input_df[scale_cols].to_numpy())
-
-    # ✅ STEP 2: One-hot encoding (drops the original categorical columns)
+    # ✅ STEP 1: One-hot encoding dulu (sama urutan seperti saat training)
     for col, categories in category_info.items():
         for cat in categories:
             col_name = f"{col}_{cat}"
             input_df[col_name] = (input_df[col] == cat).astype(int)
         input_df.drop(columns=[col], inplace=True)
 
-    # ✅ STEP 3: Align column order with training features
+    # ✅ STEP 2: Reindex agar urutan & jumlah kolom sama persis dengan training
     input_df = input_df.reindex(columns=feature_columns, fill_value=0)
+
+    # ✅ STEP 3: Scale semua kolom sekaligus (scaler di-fit dengan seluruh feature_columns)
+    input_scaled = scaler.transform(input_df.to_numpy())
+    input_df = pd.DataFrame(input_scaled, columns=feature_columns)
 
     # Prediksi
     prediction = model.predict(input_df)
