@@ -61,7 +61,7 @@ if submitted:
 
     input_df = pd.DataFrame([input_dict])
 
-    # ✅ STEP 1: One-hot encoding dulu (sama urutan seperti saat training)
+    # ✅ STEP 1: One-hot encoding
     for col, categories in category_info.items():
         for cat in categories:
             col_name = f"{col}_{cat}"
@@ -71,9 +71,23 @@ if submitted:
     # ✅ STEP 2: Reindex agar urutan & jumlah kolom sama persis dengan training
     input_df = input_df.reindex(columns=feature_columns, fill_value=0)
 
-    # ✅ STEP 3: Scale semua kolom sekaligus (scaler di-fit dengan seluruh feature_columns)
-    input_scaled = scaler.transform(input_df.to_numpy())
-    input_df = pd.DataFrame(input_scaled, columns=feature_columns)
+    # ✅ STEP 3: Scale data dengan aman
+    # Otomatis mendeteksi kolom apa saja yang digunakan scaler saat training
+    if hasattr(scaler, 'feature_names_in_'):
+        scaler_cols = list(scaler.feature_names_in_)
+        input_df[scaler_cols] = scaler.transform(input_df[scaler_cols])
+    else:
+        # Fallback manual jika scaler disave sebagai array numpy (tanpa nama kolom)
+        num_cols = [
+            'age', 'daily_screen_time_hours', 'phone_usage_before_sleep_minutes',
+            'sleep_duration_hours', 'sleep_quality_score', 'caffeine_intake_cups',
+            'physical_activity_minutes', 'notifications_received_per_day', 'mental_fatigue_score'
+        ]
+        if hasattr(scaler, 'n_features_in_') and scaler.n_features_in_ == len(num_cols):
+            input_df[num_cols] = scaler.transform(input_df[num_cols])
+        else:
+            # Jika benar-benar di-fit dengan seluruh kolom
+            input_df[:] = scaler.transform(input_df)
 
     # Prediksi
     prediction = model.predict(input_df)
